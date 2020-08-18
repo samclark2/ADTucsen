@@ -136,6 +136,41 @@ extern "C" int tucsenConfig(const char *portName, int cameraId, int traceMask,
     return asynSuccess;
 }
 
+/** Code for iocsh registration */
+static const iocshArg tucsenDriverCreateArg0 = { "Port name", iocshArgString };
+static const iocshArg tucsenDriverCreateArg1 = { "cameraId", iocshArgInt };
+static const iocshArg tucsenDriverCreateArg2 = { "Trace Mask", iocshArgInt };
+static const iocshArg tucsenDriverCreateArg3 = { "Max Buffers", iocshArgInt };
+static const iocshArg tucsenDriverCreateArg4 = { "Max Memory", iocshArgInt };
+static const iocshArg tucsenDriverCreateArg5 = { "priority", iocshArgInt };
+static const iocshArg tucsenDriverCreateArg6 = { "Stack Size", iocshArgInt };
+static const iocshArg* const tucsenDriverConfigArgs[] = { &tucsenDriverCreateArg0,
+                                                          &tucsenDriverCreateArg1,
+                                                          &tucsenDriverCreateArg2,
+                                                          &tucsenDriverCreateArg3,
+                                                          &tucsenDriverCreateArg4,
+                                                          &tucsenDriverCreateArg5,
+                                                          &tucsenDriverCreateArg6 };
+static const iocshFuncDef configtucsenDriver = { "tucsenDriverCreate", 5, tucsenDriverConfigArgs };
+static void configtucsenDriverCallFunc(const iocshArgBuf *args) {
+
+    tucsenConfig(args[0].sval, args[1].ival, args[2].ival, args[3].ival, args[4].ival,
+                       args[5].ival, args[6].ival);
+
+}
+
+static void tucsenDriverRegister(void) {
+
+    iocshRegister(&configtucsenDriver, configtucsenDriverCallFunc);
+
+}
+
+extern "C" {
+
+    epicsExportRegistrar(tucsenDriverRegister);
+
+}
+
 static void c_shutdown(void *arg)
 {
     tucsen *t = (tucsen *)arg;
@@ -716,7 +751,7 @@ asynStatus tucsen::setCamInfo(int param, int nID, int dtype)
     int tucStatus;
     TUCAM_VALUE_INFO valInfo;
     int sSize = 1024;
-    char sInfo[sSize] = {0};
+    char sInfo[1024] = {0};
     valInfo.pText = sInfo;
     valInfo.nTextSize = sSize;
     valInfo.nID = nID;

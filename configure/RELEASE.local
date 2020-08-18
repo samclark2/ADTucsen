@@ -1,0 +1,7 @@
+ASYN=         $(SUPPORT)/asyn/4-39
+ADCORE=       $(SUPPORT)/ADCore/3-9dls1
+TUCSENSDK=    /dls/science/users/ysx26594/support/NEWTUCAMSDK/tucam_Centos_20191023
+
+
+
+EPICS_BASE=/dls_sw/epics/R3.14.12.7/base

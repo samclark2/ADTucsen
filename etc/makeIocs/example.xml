@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<components arch="linux-x86_64">
+	<ADTuscen.tucsen ADDR="0" P="BL08J-EA-TEST-01" PORT="DET1.CAM" R=":CAM:" TIMEOUT="1000" TRACEMASK="0"/>
+</components>
