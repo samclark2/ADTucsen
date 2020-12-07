@@ -2,6 +2,9 @@
 # David Vine
 # Jul 17, 2017
 
+# % gui, $(PORTNAME), edm, Tucsen.edl, device=$(P)$(R), P=$(P), R=$(R), PORT=$(PORTNAME)
+
+
 include "ADBase.template"
 
 ###############################################################################
