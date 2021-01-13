@@ -1,6 +1,6 @@
 ASYN=         $(SUPPORT)/asyn/4-39
 ADCORE=       $(SUPPORT)/ADCore/3-9dls1
-TUCSENSDK=    /dls/science/users/ysx26594/support/NEWTUCAMSDK/tucam_Centos_20191023
+TUCSENSDK=    $(TOP)/sdk
 
 
 
