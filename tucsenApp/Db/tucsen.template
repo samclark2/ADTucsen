@@ -2,7 +2,7 @@
 # David Vine
 # Jul 17, 2017
 
-# % gui, $(PORTNAME), edm, Tucsen.edl, device=$(P)$(R), P=$(P), R=$(R), PORT=$(PORTNAME)
+# % gui, $(PORT), edmtab, Tucsen.edl, device=$(P)$(R), P=$(P), R=$(R), PORT=$(PORT)
 
 
 include "ADBase.template"
