@@ -23,6 +23,7 @@
 #include <TUCamApi.h>
 
 #include <ADDriver.h>
+#include <iostream>
 
 #define DRIVER_VERSION      0
 #define DRIVER_REVISION     2
@@ -81,6 +82,7 @@ class tucsen : public ADDriver
         asynStatus grabImage();
         asynStatus startCapture();
         asynStatus stopCapture();
+        asynStatus setTrigger();
 
         asynStatus connectCamera();
         asynStatus disconnectCamera();
@@ -393,7 +395,9 @@ void tucsen::imageGrabTask(void)
 			setIntegerParam(ADStatus, ADStatusWaiting);
 			callParamCallbacks();
 			printf("Cap start\n");
-            tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, TUCCM_SEQUENCE);
+            //tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, TUCCM_SEQUENCE);
+            status = setTrigger();
+            tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, triggerHandle_.nTgrMode);
 			printf("Cap start done\n");
 			setIntegerParam(ADStatus, ADStatusAcquire);
 			printf("Call callback\n");
@@ -614,10 +618,22 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
         } else {
             status = stopCapture();
         }
-    } else if ((function==ADTriggerMode) ||
-               (function==ADNumImages)   ||
-               (function==ADNumExposures)){
+    } else if (function==ADNumImages){
+        triggerHandle_.nFrames = value; // Trigger one frame(-1:to Ram)
+    } else if (function==ADNumExposures){
         //status = setTrigger();
+    } else if (function==ADTriggerMode){
+        if (value==0){
+            // internal
+            triggerHandle_.nTgrMode = TUCCM_SEQUENCE; // Sequence mode
+            triggerHandle_.nExpMode = TUCTE_EXPTM;
+            std::cout<<"Setting internal Trigger (Sequence mode?)"<<std::endl;
+        } else if (value==1){
+             //external
+            triggerHandle_.nTgrMode = TUCCM_TRIGGER_STANDARD; // Exposure mode
+            triggerHandle_.nExpMode = TUCTE_WIDTH;
+            std::cout<<"Setting External trigger (Standard?)"<<std::endl;
+        }
     } else if (function==TucsenFrameFormat){
         frameHandle_.ucFormatGet = frameFormats[value];
         frameHandle_.uiRsdSize = 1;
@@ -647,6 +663,19 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
             driverName, functionName, function, value, status);
     callParamCallbacks();
     return status;
+}
+
+asynStatus tucsen::setTrigger()
+{
+
+    triggerHandle_.nEdgeMode= TUCTD_RISING; // Stimulate rising edge
+    triggerHandle_.nDelayTm = 0; // Delay 0 ms
+
+    TUCAM_Cap_SetTrigger(camHandle_.hIdxTUCam, triggerHandle_);
+    //TUCAM_Cap_Start(m_opCam.hIdxCam, TUCCM_TRIGGER_STANDARD); // Standard trigger mode
+
+ // Refer to memory management sample code for data obtaining
+
 }
 
 void tucsen::tempTask(void){
