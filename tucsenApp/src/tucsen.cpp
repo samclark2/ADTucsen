@@ -619,7 +619,7 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
             status = stopCapture();
         }
     } else if (function==ADNumImages){
-        triggerHandle_.nFrames = value; // Trigger one frame(-1:to Ram)
+        //triggerHandle_.nFrames = value; // Trigger one frame(-1:to Ram)
     } else if (function==ADNumExposures){
         //status = setTrigger();
     } else if (function==ADTriggerMode){
@@ -670,7 +670,7 @@ asynStatus tucsen::setTrigger()
 
     triggerHandle_.nEdgeMode= TUCTD_RISING; // Stimulate rising edge
     triggerHandle_.nDelayTm = 0; // Delay 0 ms
-
+    triggerHandle_.nFrames = 1;
     TUCAM_Cap_SetTrigger(camHandle_.hIdxTUCam, triggerHandle_);
     //TUCAM_Cap_Start(m_opCam.hIdxCam, TUCCM_TRIGGER_STANDARD); // Standard trigger mode
 
