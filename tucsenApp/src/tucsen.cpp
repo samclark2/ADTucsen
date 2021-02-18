@@ -587,7 +587,7 @@ asynStatus tucsen::grabImage()
     }
     memcpy(pRaw_->pData, frameHandle_.pBuffer+offset, dataSize);
     getIntegerParam(NDArrayCounter, &count);
-    pRaw_->uniqueId = count;
+    pRaw_->uniqueId = count+1;
     updateTimeStamp(&pRaw_->epicsTS);
     pRaw_->timeStamp = pRaw_->epicsTS.secPastEpoch+pRaw_->epicsTS.nsec/1e9;
 
