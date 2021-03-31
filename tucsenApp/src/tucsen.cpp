@@ -36,6 +36,7 @@
 #define TucsenFrameFormatString   "T_FRAME_FORMAT"
 #define TucsenBinningModeString   "T_BIN_MODE"
 #define TucsenImageModeString     "T_IMG_MODE"
+#define TucsenROIModeString       "T_ROI_MODE"
 #define TucsenFanGearString       "T_FAN_GEAR"
 
 static const int frameFormats[3] = {
@@ -74,6 +75,7 @@ class tucsen : public ADDriver
         int TucsenBinMode;
         int TucsenFanGear;
         int TucsenImageMode;
+        int TucsenROIMode;
         int TucsenFrameFormat;
 #define LAST_TUCSEN_PARAM TucsenFrameFormat
 
@@ -213,6 +215,7 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     createParam(TucsenBinningModeString,   asynParamInt32,   &TucsenBinMode);
     createParam(TucsenFanGearString,       asynParamInt32,   &TucsenFanGear);
     createParam(TucsenImageModeString,     asynParamInt32,   &TucsenImageMode);
+    createParam(TucsenROIModeString,       asynParamInt32,   &TucsenROIMode);
     createParam(TucsenFrameFormatString,   asynParamInt32,   &TucsenFrameFormat);
 
     /* Set initial values for some parameters */
@@ -678,6 +681,37 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
         }
 
 
+    } else if (function==TucsenROIMode){
+        TUCAM_ROI_ATTR roiAttr;
+        if (value==0){
+            std::cout<<"Setting Height to 2040"<<std::endl;
+            roiAttr.nHeight=2040;
+        }
+        else if (value==1){
+            std::cout<<"Setting Height to 1024"<<std::endl;
+            roiAttr.nHeight=1024;
+        }
+        else if (value==2){
+            std::cout<<"Setting Height to 512"<<std::endl;
+            roiAttr.nHeight=512;
+        }
+        else if (value==3){
+            std::cout<<"Setting Height to 256"<<std::endl;
+            roiAttr.nHeight=256;
+        }
+        else if (value==4){
+            std::cout<<"Setting Height to 128"<<std::endl;
+            roiAttr.nHeight=128;
+        }
+        else if (value==5){
+            std::cout<<"Setting Height to 64"<<std::endl;
+            roiAttr.nHeight=64;
+        }
+        roiAttr.nWidth=2048;
+        roiAttr.bEnable = TRUE;
+        TUCAM_Cap_SetROI(camHandle_.hIdxTUCam, roiAttr);
+
+
     } else {
         if (function < FIRST_TUCSEN_PARAM){
             status = ADDriver::writeInt32(pasynUser, value);
@@ -950,7 +984,7 @@ asynStatus tucsen::stopCapture()
     setShutter(0);
     setIntegerParam(ADStatus, ADStatusWaiting);
     callParamCallbacks();
-	//tucStatus = TUCAM_Cap_Stop(camHandle_.hIdxTUCam);
+    //tucStatus = TUCAM_Cap_Stop(camHandle_.hIdxTUCam);
     setIntegerParam(ADAcquire, 0);
     setIntegerParam(ADStatus, ADStatusIdle);
     callParamCallbacks();

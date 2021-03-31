@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 403
-y 253
+x 1161
+y 239
 w 395
 h 845
 font "helvetica-medium-r-18.0"
@@ -74,101 +74,6 @@ bgColor index 3
 useDisplayBg
 value {
   "Fan:"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 1
-x 8
-y 576
-w 90
-h 20
-font "arial-bold-r-12.0"
-fgColor index 14
-bgColor index 3
-useDisplayBg
-value {
-  "Brightness"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 1
-x 8
-y 600
-w 90
-h 20
-font "arial-bold-r-12.0"
-fgColor index 14
-bgColor index 3
-useDisplayBg
-value {
-  "Black Level"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 1
-x 8
-y 624
-w 90
-h 20
-font "arial-bold-r-12.0"
-fgColor index 14
-bgColor index 3
-useDisplayBg
-value {
-  "Sharpness"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 1
-x 8
-y 648
-w 90
-h 20
-font "arial-bold-r-12.0"
-fgColor index 14
-bgColor index 3
-useDisplayBg
-value {
-  "Noise Level"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 1
-x 12
-y 676
-w 90
-h 20
-font "arial-bold-r-12.0"
-fgColor index 14
-bgColor index 3
-useDisplayBg
-value {
-  "HDR K"
 }
 endObjectProperties
 
@@ -362,6 +267,268 @@ autoSize
 border
 endObjectProperties
 
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 104
+y 576
+w 136
+h 20
+fgColor index 25
+bgColor index 3
+inconsistentColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(P)$(R)GainMode"
+font "arial-bold-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 12
+y 572
+w 90
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "Image Mode"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 6
+release 0
+x 260
+y 576
+w 120
+h 20
+controlPv "$(P)$(R)GainMode_RBV"
+font "arial-bold-r-12.0"
+fontAlign "center"
+fgColor index 16
+fgAlarm
+bgColor index 10
+precision 5
+nullColor index 30
+useHexPrefix
+newPos
+objType "controls"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 12
+y 624
+w 90
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "Transfer rate"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 6
+release 0
+x 96
+y 624
+w 84
+h 20
+controlPv "$(P)$(R)TransferRate_RBV"
+font "arial-bold-r-12.0"
+fontAlign "center"
+fgColor index 16
+fgAlarm
+bgColor index 10
+precision 5
+nullColor index 30
+useHexPrefix
+newPos
+objType "controls"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 6
+release 0
+x 260
+y 600
+w 120
+h 20
+controlPv "$(P)$(R)BinMode_RBV"
+font "arial-bold-r-12.0"
+fontAlign "center"
+fgColor index 16
+fgAlarm
+bgColor index 10
+precision 5
+nullColor index 30
+useHexPrefix
+newPos
+objType "controls"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 12
+y 600
+w 92
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "Bin Mode"
+}
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 104
+y 600
+w 136
+h 20
+fgColor index 25
+bgColor index 3
+inconsistentColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(P)$(R)BinMode"
+font "arial-bold-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 8
+y 680
+w 90
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "Brightness"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 8
+y 704
+w 90
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "Black Level"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 8
+y 728
+w 90
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "Sharpness"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 8
+y 752
+w 90
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "Noise Level"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 12
+y 780
+w 90
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "HDR K"
+}
+endObjectProperties
+
 # (Text Control)
 object activeXTextDspClass
 beginObjectProperties
@@ -369,8 +536,8 @@ major 4
 minor 6
 release 0
 x 184
-y 576
-w 72
+y 680
+w 88
 h 20
 controlPv "$(P)$(R)Brightness_RBV"
 font "arial-bold-r-12.0"
@@ -393,7 +560,7 @@ major 10
 minor 0
 release 0
 x 104
-y 576
+y 680
 w 75
 h 20
 controlPv "$(P)$(R)Brightness"
@@ -413,7 +580,7 @@ major 10
 minor 0
 release 0
 x 104
-y 676
+y 780
 w 75
 h 20
 controlPv "$(P)$(R)HDRK"
@@ -433,8 +600,8 @@ major 4
 minor 6
 release 0
 x 184
-y 600
-w 72
+y 704
+w 88
 h 20
 controlPv "$(P)$(R)BlackLevel_RBV"
 font "arial-bold-r-12.0"
@@ -457,8 +624,8 @@ major 4
 minor 6
 release 0
 x 184
-y 624
-w 72
+y 728
+w 88
 h 20
 controlPv "$(P)$(R)Sharpness_RBV"
 font "arial-bold-r-12.0"
@@ -481,8 +648,8 @@ major 4
 minor 6
 release 0
 x 184
-y 676
-w 72
+y 780
+w 88
 h 20
 controlPv "$(P)$(R)HDRK_RBV"
 font "arial-bold-r-12.0"
@@ -505,8 +672,8 @@ major 4
 minor 6
 release 0
 x 184
-y 652
-w 72
+y 756
+w 88
 h 20
 controlPv "$(P)$(R)NoiseLevel_RBV"
 font "arial-bold-r-12.0"
@@ -529,7 +696,7 @@ major 10
 minor 0
 release 0
 x 104
-y 648
+y 752
 w 75
 h 20
 controlPv "$(P)$(R)NoiseLevel"
@@ -549,7 +716,7 @@ major 10
 minor 0
 release 0
 x 104
-y 600
+y 704
 w 75
 h 20
 controlPv "$(P)$(R)BlackLevel"
@@ -569,7 +736,7 @@ major 10
 minor 0
 release 0
 x 104
-y 624
+y 728
 w 75
 h 20
 controlPv "$(P)$(R)Sharpness"
@@ -580,5 +747,86 @@ fgAlarm
 bgColor index 3
 fill
 font "arial-bold-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 8
+y 664
+w 360
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "The following have PVs but are not implemented"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 6
+release 0
+x 260
+y 644
+w 120
+h 20
+controlPv "$(P)$(R)ROIMode_RBV"
+font "arial-bold-r-12.0"
+fontAlign "center"
+fgColor index 16
+fgAlarm
+bgColor index 10
+precision 5
+nullColor index 30
+useHexPrefix
+newPos
+objType "controls"
+noExecuteClipMask
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 104
+y 644
+w 136
+h 20
+fgColor index 25
+bgColor index 3
+inconsistentColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(P)$(R)ROIMode"
+font "arial-bold-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 12
+y 644
+w 92
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "ROI_Mode"
+}
 endObjectProperties
 

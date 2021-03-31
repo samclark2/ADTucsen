@@ -165,6 +165,45 @@ record(mbbi, "$(P)$(R)GainMode_RBV")
     field(SXST, "LowGain (For 400BSIV2)")
     field(SXVL, "6")
 }
+
+record(mbbo, "$(P)$(R)ROIMode")
+{
+    field(PINI, "YES")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_ROI_MODE")
+    field(ZRST, "2040x2048")
+    field(ZRVL, "0")
+    field(ONST, "1024x2048")
+    field(ONVL, "1")
+    field(TWST, "512x2048")
+    field(TWVL, "2")
+    field(THST, "256x2048")
+    field(THVL, "3")
+    field(FRST, "128x2048")
+    field(FRVL, "4")
+    field(FVST, "64x2048")
+    field(FVVL, "5")
+}
+
+record(mbbi, "$(P)$(R)ROIMode_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_ROI_MODE")
+    field(SCAN, "I/O Intr")
+    field(ZRST, "2040x2048")
+    field(ZRVL, "0")
+    field(ONST, "1024x2048")
+    field(ONVL, "1")
+    field(TWST, "512x2048")
+    field(TWVL, "2")
+    field(THST, "256x2048")
+    field(THVL, "3")
+    field(FRST, "128x2048")
+    field(FRVL, "4")
+    field(FVST, "64x2048")
+    field(FVVL, "5")
+}
+
 record(mbbo, "$(P)$(R)AutoExposure")
 {
    field(PINI, "YES")
