@@ -96,6 +96,7 @@ class tucsen : public ADDriver
         asynStatus setProperty(int nID, double value);
         asynStatus setCapability(int property, int value);
         asynStatus getCapability(int property, int& value);
+        unsigned int checkStatus(unsigned int returnStatus);
 
         /* Data */
         int cameraId_;
@@ -390,21 +391,36 @@ void tucsen::imageGrabTask(void)
                     "%s:%s: waiting for acquisition to start\n",
                     driverName, functionName);
             unlock();
-			tucStatus = TUCAM_Cap_Stop(camHandle_.hIdxTUCam);
+			
+            try{
+                tucStatus = checkStatus(TUCAM_Cap_Stop(camHandle_.hIdxTUCam));
+            } catch (const std::string &e) {
+                asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                    "%s:%s: %s\n",
+                    driverName, functionName, e.c_str());
+                return;
+            }
             epicsEventWait(startEventId_);
 			printf("W lock\n");
             lock();
 			printf("G lock\n");
 			setIntegerParam(ADStatus, ADStatusWaiting);
-			callParamCallbacks();
+            callParamCallbacks();
 			printf("Cap start\n");
             //tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, TUCCM_SEQUENCE);
             status = setTrigger();
-            tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, triggerHandle_.nTgrMode);
+            try{
+                tucStatus = checkStatus(TUCAM_Cap_Start(camHandle_.hIdxTUCam, triggerHandle_.nTgrMode));
+            } catch (const std::string &e) {
+                asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                    "%s:%s: %s\n",
+                    driverName, functionName, e.c_str());
+                return;
+            }
 			printf("Cap start done\n");
 			setIntegerParam(ADStatus, ADStatusAcquire);
 			printf("Call callback\n");
-			callParamCallbacks();
+            callParamCallbacks();
 			printf("callback done\n");
             if (tucStatus!=TUCAMRET_SUCCESS){
                 asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
@@ -477,18 +493,25 @@ asynStatus tucsen::grabImage()
     int nDims;
     int count;
 
-
-	printf("do unlock\n");
+    printf("do unlock\n");
     unlock();
-	printf("wait for buffer\n");
-    tucStatus = TUCAM_Buf_WaitForFrame(camHandle_.hIdxTUCam, &frameHandle_);
-	printf("Waiting for lock\n");
+    printf("wait for buffer\n");
+    try{
+        tucStatus = checkStatus(TUCAM_Buf_WaitForFrame(camHandle_.hIdxTUCam, &frameHandle_));
+    } catch (const std::string &e) {
+        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+            "%s:%s: %s\n",
+        driverName, functionName, e.c_str());
+        status = asynError;
+    }
+
+    printf("Waiting for lock\n");
     lock();
-	printf("Got lock\n");
+    printf("Got lock\n");
     if (tucStatus!= TUCAMRET_SUCCESS){
-		asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-				"%s:%s: Failed to wait for buffer (%d)\n",
-				driverName, functionName, tucStatus);
+        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                "%s:%s: Failed to wait for buffer (%d)\n",
+                driverName, functionName, tucStatus);
     }
 
     setIntegerParam(ADStatus, ADStatusReadout);
@@ -638,18 +661,32 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
             std::cout<<"Setting External trigger (Standard?)"<<std::endl;
         }
     } else if (function==TucsenFrameFormat){
-        frameHandle_.ucFormatGet = frameFormats[value];
-        frameHandle_.uiRsdSize = 1;
-        frameHandle_.pBuffer = NULL;
-        tucStatus = TUCAM_Buf_Release(camHandle_.hIdxTUCam);
-        tucStatus = TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_);
-    } else if (function==TucsenBinMode){
-        if ((value==0)||(value==1)){
-            status = setCapability(TUIDC_RESOLUTION, value);
+        try{
+            frameHandle_.ucFormatGet = frameFormats[value];
+            frameHandle_.uiRsdSize = 1;
+            frameHandle_.pBuffer = NULL;
+            tucStatus = checkStatus(TUCAM_Buf_Release(camHandle_.hIdxTUCam));
+            tucStatus = checkStatus(TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_));
+        } catch (const std::string &e) {
+            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                "%s:%s: %s\n",
+                driverName, functionName, e.c_str());
+            return status;
         }
-        frameHandle_.pBuffer = NULL;
-        tucStatus = TUCAM_Buf_Release(camHandle_.hIdxTUCam);
-        tucStatus = TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_);
+    } else if (function==TucsenBinMode){
+        try {
+            if ((value==0)||(value==1)){
+                status = setCapability(TUIDC_RESOLUTION, value);
+            }
+            frameHandle_.pBuffer = NULL;
+            tucStatus = TUCAM_Buf_Release(camHandle_.hIdxTUCam);
+            tucStatus = TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_);
+        } catch (const std::string &e) {
+            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                "%s:%s: %s\n",
+                driverName, functionName, e.c_str());
+            return status;
+        }
     } else if (function==TucsenFanGear){
         if ((value>=0)||(value<=6)){
             status = setCapability(TUIDC_FAN_GEAR, value);
@@ -682,34 +719,41 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
 
 
     } else if (function==TucsenROIMode){
-        TUCAM_ROI_ATTR roiAttr;
-        if (value==0){
-            std::cout<<"Setting Height to 2040"<<std::endl;
-            roiAttr.nHeight=2040;
+        try{
+            TUCAM_ROI_ATTR roiAttr;
+            if (value==0){
+                std::cout<<"Setting Height to 2040"<<std::endl;
+                roiAttr.nHeight=2040;
+            }
+            else if (value==1){
+                std::cout<<"Setting Height to 1024"<<std::endl;
+                roiAttr.nHeight=1024;
+            }
+            else if (value==2){
+                std::cout<<"Setting Height to 512"<<std::endl;
+                roiAttr.nHeight=512;
+            }
+            else if (value==3){
+                std::cout<<"Setting Height to 256"<<std::endl;
+                roiAttr.nHeight=256;
+            }
+            else if (value==4){
+                std::cout<<"Setting Height to 128"<<std::endl;
+                roiAttr.nHeight=128;
+            }
+            else if (value==5){
+                std::cout<<"Setting Height to 64"<<std::endl;
+                roiAttr.nHeight=64;
+            }
+            roiAttr.nWidth=2048;
+            roiAttr.bEnable = TRUE;
+            checkStatus(TUCAM_Cap_SetROI(camHandle_.hIdxTUCam, roiAttr));
+        }  catch (const std::string &e) {
+            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                "%s:%s: %s\n",
+                driverName, functionName, e.c_str());
+            return status;
         }
-        else if (value==1){
-            std::cout<<"Setting Height to 1024"<<std::endl;
-            roiAttr.nHeight=1024;
-        }
-        else if (value==2){
-            std::cout<<"Setting Height to 512"<<std::endl;
-            roiAttr.nHeight=512;
-        }
-        else if (value==3){
-            std::cout<<"Setting Height to 256"<<std::endl;
-            roiAttr.nHeight=256;
-        }
-        else if (value==4){
-            std::cout<<"Setting Height to 128"<<std::endl;
-            roiAttr.nHeight=128;
-        }
-        else if (value==5){
-            std::cout<<"Setting Height to 64"<<std::endl;
-            roiAttr.nHeight=64;
-        }
-        roiAttr.nWidth=2048;
-        roiAttr.bEnable = TRUE;
-        TUCAM_Cap_SetROI(camHandle_.hIdxTUCam, roiAttr);
 
 
     } else {
@@ -726,11 +770,17 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
 
 asynStatus tucsen::setTrigger()
 {
-
-    triggerHandle_.nEdgeMode= TUCTD_RISING; // Stimulate rising edge
-    triggerHandle_.nDelayTm = 0; // Delay 0 ms
-    triggerHandle_.nFrames = 1;
-    TUCAM_Cap_SetTrigger(camHandle_.hIdxTUCam, triggerHandle_);
+    static const char* functionName = "setTrigger";
+    try{
+        triggerHandle_.nEdgeMode= TUCTD_RISING; // Stimulate rising edge
+        triggerHandle_.nDelayTm = 0; // Delay 0 ms
+        triggerHandle_.nFrames = 1;
+        TUCAM_Cap_SetTrigger(camHandle_.hIdxTUCam, triggerHandle_);
+    } catch (const std::string &e) {
+        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+            "%s:%s: %s\n",
+            driverName, functionName, e.c_str());
+    }
     //TUCAM_Cap_Start(m_opCam.hIdxCam, TUCCM_TRIGGER_STANDARD); // Standard trigger mode
 
  // Refer to memory management sample code for data obtaining
@@ -832,6 +882,166 @@ asynStatus tucsen::getCamInfo(int nID, char *sBuf, int &val)
     }
 }
 
+
+unsigned int tucsen::checkStatus(unsigned int returnStatus)
+{  
+
+  char message[256];
+  if (returnStatus == TUCAMRET_SUCCESS) {
+    return returnStatus;
+  } else if (returnStatus == TUCAMRET_FAILURE) {
+    throw std::string("Generic error code, see API for more details. TUCAMRET_FAILURE");
+  } else if (returnStatus == TUCAMRET_NO_MEMORY) {
+    throw std::string("Not Enough Memory");
+  } else if (returnStatus == TUCAMRET_NO_RESOURCE) {
+    throw std::string("Not enough resources (Not including memory)");
+  } else if (returnStatus == TUCAMRET_NO_MODULE) {
+    throw std::string("No Sub module");
+
+    //  initialization error
+  } else if (returnStatus ==  TUCAMRET_NO_DRIVER) {
+    throw std::string(" no driver");
+  } else if (returnStatus ==  TUCAMRET_NO_CAMERA) {
+    throw std::string(" no camera");
+  } else if (returnStatus ==  TUCAMRET_NO_GRABBER         ) {
+   throw std::string(" no grabber");  
+  } else if (returnStatus ==  TUCAMRET_NO_PROPERTY        ) {
+   throw std::string(" there is no alternative or influence id, or no more property id ");
+
+  } else if (returnStatus ==  TUCAMRET_FAILOPEN_CAMERA    ) {
+   throw std::string(" fail open the camera");
+  } else if (returnStatus ==  TUCAMRET_FAILOPEN_BULKIN    ) {
+   throw std::string(" fail open the bulk in endpoint");
+  } else if (returnStatus ==  TUCAMRET_FAILOPEN_BULKOUT   ) {
+   throw std::string(" fail open the bulk out endpoint");
+  } else if (returnStatus ==  TUCAMRET_FAILOPEN_CONTROL   ) {
+   throw std::string(" fail open the control endpoint");
+  } else if (returnStatus ==  TUCAMRET_FAILCLOSE_CAMERA   ) {
+   throw std::string(" fail close the camera");
+
+  } else if (returnStatus ==  TUCAMRET_FAILOPEN_FILE      ) {
+   throw std::string(" fail open the file");
+  } else if (returnStatus ==  TUCAMRET_FAILOPEN_CODEC     ) {
+   throw std::string(" fail open the video codec");
+  } else if (returnStatus ==  TUCAMRET_FAILOPEN_CONTEXT   ) {
+   throw std::string(" fail open the video context");
+
+    //  status error
+  } else if (returnStatus ==  TUCAMRET_INIT               ) {
+   throw std::string(" API requires has not initialized state.");
+  } else if (returnStatus ==  TUCAMRET_BUSY               ) {
+   throw std::string(" API cannot process in busy state.");
+  } else if (returnStatus ==  TUCAMRET_NOT_INIT           ) {
+   throw std::string(" API requires has initialized state.");
+  } else if (returnStatus ==  TUCAMRET_EXCLUDED           ) {
+   throw std::string(" some resource is exclusive and already used.");
+  } else if (returnStatus ==  TUCAMRET_NOT_BUSY           ) {
+   throw std::string(" API requires busy state.");
+  } else if (returnStatus ==  TUCAMRET_NOT_READY          ) {
+   throw std::string(" API requires ready state.");
+    
+    //  wait error
+  } else if (returnStatus ==  TUCAMRET_ABORT              ){     
+    throw std::string(" abort process");
+  } else if (returnStatus ==  TUCAMRET_TIMEOUT            ){     
+    throw std::string(" timeout");
+  } else if (returnStatus ==  TUCAMRET_LOSTFRAME          ){     
+    throw std::string(" frame data is lost");
+  } else if (returnStatus ==  TUCAMRET_MISSFRAME          ){     
+    throw std::string(" frame is lost but reason is low lever driver's bug");
+  } else if (returnStatus ==  TUCAMRET_USB_STATUS_ERROR   ){     
+    throw std::string(" the USB status error");
+
+    // calling error
+  } else if (returnStatus ==  TUCAMRET_INVALID_CAMERA     ){     
+    throw std::string(" invalid camera");
+  } else if (returnStatus ==  TUCAMRET_INVALID_HANDLE     ){     
+    throw std::string(" invalid camera handle");
+  } else if (returnStatus ==  TUCAMRET_INVALID_OPTION     ){     
+    throw std::string(" invalid the option value of structure");
+  } else if (returnStatus ==  TUCAMRET_INVALID_IDPROP     ){     
+    throw std::string(" invalid property id");
+  } else if (returnStatus ==  TUCAMRET_INVALID_IDCAPA     ){     
+    throw std::string(" invalid capability id");
+  } else if (returnStatus ==  TUCAMRET_INVALID_IDPARAM    ){     
+    throw std::string(" invalid parameter id");
+  } else if (returnStatus ==  TUCAMRET_INVALID_PARAM      ){     
+    throw std::string(" invalid parameter");
+  } else if (returnStatus ==  TUCAMRET_INVALID_FRAMEIDX   ){     
+    throw std::string(" invalid frame index");
+  } else if (returnStatus ==  TUCAMRET_INVALID_VALUE      ){     
+    throw std::string(" invalid property value");
+  } else if (returnStatus ==  TUCAMRET_INVALID_EQUAL      ){     
+    throw std::string(" invalid property value equal ");
+  } else if (returnStatus ==  TUCAMRET_INVALID_CHANNEL    ){     
+    throw std::string(" the property id specifies channel but channel is invalid");
+  } else if (returnStatus ==  TUCAMRET_INVALID_SUBARRAY   ){     
+    throw std::string(" the combination of subarray values are invalid. e.g. TUCAM_IDPROP_SUBARRAYHPOS + TUCAM_IDPROP_SUBARRAYHSIZE is greater than the number of horizontal pixel of sensor.");
+  } else if (returnStatus ==  TUCAMRET_INVALID_VIEW       ){     
+    throw std::string(" invalid view window handle");
+  } else if (returnStatus ==  TUCAMRET_INVALID_PATH       ){     
+    throw std::string(" invalid file path");
+  } else if (returnStatus ==  TUCAMRET_INVALID_IDVPROP    ){     
+    throw std::string(" invalid vendor property id");
+
+  } else if (returnStatus ==  TUCAMRET_NO_VALUETEXT       ){     
+    throw std::string(" the property does not have value text");
+  } else if (returnStatus ==  TUCAMRET_OUT_OF_RANGE       ){     
+    throw std::string(" value is out of range");
+
+  } else if (returnStatus ==  TUCAMRET_NOT_SUPPORT        ){     
+    throw std::string(" camera does not support the function or property with current settings");
+  } else if (returnStatus ==  TUCAMRET_NOT_WRITABLE       ){     
+    throw std::string(" the property is not writable ");
+  } else if (returnStatus ==  TUCAMRET_NOT_READABLE       ){     
+    throw std::string(" the property is not readable");
+
+             
+  } else if (returnStatus ==  TUCAMRET_WRONG_HANDSHAKE    ){     
+    throw std::string(" this error happens TUCAM get error code from camera unexpectedly");
+  } else if (returnStatus ==  TUCAMRET_NEWAPI_REQUIRED    ){     
+    throw std::string(" old API does not support the value because only new API supports the value");
+ 
+  } else if (returnStatus ==  TUCAMRET_ACCESSDENY         ){     
+    throw std::string(" the property cannot access during this TUCAM status");
+
+  } else if (returnStatus ==  TUCAMRET_NO_CORRECTIONDATA  ){     
+    throw std::string(" not take the dark and shading correction data yet.");
+
+  } else if (returnStatus ==  TUCAMRET_INVALID_PRFSETS    ){     
+    throw std::string(" the profiles set name is invalid");
+  } else if (returnStatus ==  TUCAMRET_INVALID_IDPPROP    ){     
+    throw std::string(" invalid process property id");
+
+  } else if (returnStatus ==  TUCAMRET_DECODE_FAILURE    ){
+    throw std::string(" the image decoding raw data to rgb data failure ");
+  } else if (returnStatus ==  TUCAMRET_COPYDATA_FAILURE  ){
+    throw std::string(" the image data copying failure ");
+  } else if (returnStatus ==  TUCAMRET_ENCODE_FAILURE    ){
+    throw std::string(" the image encoding data  to video failure ");
+  } else if (returnStatus ==  TUCAMRET_WRITE_FAILURE     ){
+    throw std::string(" the write the video frame failure ");
+
+    //  camera or bus trouble
+  } else if (returnStatus ==  TUCAMRET_FAIL_READ_CAMERA  ){
+    throw std::string(" fail read from camera   ");
+  } else if (returnStatus ==  TUCAMRET_FAIL_WRITE_CAMERA ){
+    throw std::string(" fail write to camera ");
+  } else if (returnStatus ==  TUCAMRET_OPTICS_UNPLUGGED  ){
+    throw std::string(" optics part is unplugged so please check it. ");
+
+  } else if (returnStatus ==  TUCAMRET_RECEIVE_FINISH    ){
+    throw std::string(" no error, vendor receive frame message   ");
+  } else if (returnStatus ==  TUCAMRET_EXTERNAL_TRIGGER  ){
+    throw std::string(" no error, receive the external trigger signal ");
+  } else {
+    sprintf(message, "ERROR: Unknown error code=%d returned from Tucsen SDK.", returnStatus);
+    throw std::string(message);
+  }
+
+  return returnStatus;
+}
+
 asynStatus tucsen::setCamInfo(int param, int nID, int dtype)
 {
     static const char* functionName = "setCamInfo";
@@ -894,25 +1104,30 @@ asynStatus tucsen::setProperty(int property, double value){
 
     attrProp.nIdxChn = 0;
     attrProp.idProp = property;
-    tucStatus = TUCAM_Prop_GetAttr(camHandle_.hIdxTUCam, &attrProp);
-    if (tucStatus==TUCAMRET_SUCCESS)
-    {
-		printf("min: %f Max: %f\n", attrProp.dbValMin, attrProp.dbValMax);
-        if(value<attrProp.dbValMin){
-            value = attrProp.dbValMin;
-			printf("Clipping set min value: %d, %f\n", property, value);
-        } else if (value>attrProp.dbValMax){
-            value = attrProp.dbValMax;
-			printf("Clipping set max value: %d, %f\n", property, value);
+    try {
+        tucStatus = checkStatus(TUCAM_Prop_GetAttr(camHandle_.hIdxTUCam, &attrProp));
+        if (tucStatus==TUCAMRET_SUCCESS)
+        {
+    		printf("min: %f Max: %f\n", attrProp.dbValMin, attrProp.dbValMax);
+            if(value<attrProp.dbValMin){
+                value = attrProp.dbValMin;
+    			printf("Clipping set min value: %d, %f\n", property, value);
+            } else if (value>attrProp.dbValMax){
+                value = attrProp.dbValMax;
+    			printf("Clipping set max value: %d, %f\n", property, value);
+            }
         }
-    }
-	printf("Value: %f\n", value);
-    tucStatus = TUCAM_Prop_SetValue(camHandle_.hIdxTUCam, property, value);
-    if (tucStatus!=TUCAMRET_SUCCESS){
+    	printf("Value: %f\n", value);
+        tucStatus = checkStatus(TUCAM_Prop_SetValue(camHandle_.hIdxTUCam, property, value));
+    }  catch (const std::string &e) {
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-                "%s:%s unable to set property %d\n",
-                driverName, functionName, property);
-    } 
+            "%s:%s unable to set property %d\n",
+            driverName, functionName, property);
+        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+            "%s:%s: %s\n",
+            driverName, functionName, e.c_str());
+        return (asynStatus)tucStatus;
+    }
     return (asynStatus)tucStatus;
 }
 
@@ -927,23 +1142,42 @@ asynStatus tucsen::setCapability(int property, int val)
 	valText.pText = &szRes[0];
 	attrCapa.idCapa = property;
 
-	tucStatus = TUCAM_Capa_GetAttr(camHandle_.hIdxTUCam, &attrCapa);
-	if (tucStatus==TUCAMRET_SUCCESS){
-		int nCnt = attrCapa.nValMax - attrCapa.nValMin;
-		valText.nID = property;
+    try{
+        tucStatus = checkStatus(TUCAM_Capa_GetAttr(camHandle_.hIdxTUCam, &attrCapa));
+	    if (tucStatus==TUCAMRET_SUCCESS){
+	   	    int nCnt = attrCapa.nValMax - attrCapa.nValMin;
+	       	valText.nID = property;
 
-		for (int i=0; i<nCnt;i++){
-			valText.dbValue = i;
-			TUCAM_Capa_GetValueText(camHandle_.hIdxTUCam, &valText);
-			printf("%s\n", valText.pText);
-		}
-	}
-	tucStatus = TUCAM_Capa_SetValue(camHandle_.hIdxTUCam, property, val);
-    if (tucStatus!=TUCAMRET_SUCCESS)
-    {
+	   	    for (int i=0; i<nCnt;i++){
+	   		   valText.dbValue = i;
+               try{
+	   		      checkStatus(TUCAM_Capa_GetValueText(camHandle_.hIdxTUCam, &valText));
+	   		   }catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                    "%s:%s: %s\n TUCAM_CAPA_GetValueText\n",
+                    driverName, functionName, e.c_str());
+               }
+               printf("%s\n", valText.pText);
+	   	   }
+        }
+    } catch (const std::string &e) {
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-                "%s:%s unable to set capability %d=%d\n",
-                driverName, functionName, property, val);
+            "%s:%s: %s\nTUCAM_Capa_GetAttr\n",
+            driverName, functionName, e.c_str());
+    }
+    try{
+        tucStatus = checkStatus(TUCAM_Capa_SetValue(camHandle_.hIdxTUCam, property, val));
+        if (tucStatus!=TUCAMRET_SUCCESS)
+        {
+            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                    "%s:%s unable to set capability %d=%d\n",
+                    driverName, functionName, property, val);
+            return asynError;
+        }
+    } catch (const std::string &e) {
+        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+            "%s:%s: %s\nTUCAM_Capa_SetValue\n",
+            driverName, functionName, e.c_str());
         return asynError;
     }
     return asynSuccess;
