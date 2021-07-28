@@ -56,7 +56,7 @@ class tucsen : public ADDriver
     public:
         tucsen( const char* portName, int cameraId, int traceMask, int maxBuffers,
                 size_t maxMemory, int priority, int stackSize);
-
+        // virtual ~tucsen();
         /* Virtual methods to override from ADDrive */
         virtual asynStatus writeInt32( asynUser *pasynUser, epicsInt32 value);
         virtual asynStatus writeFloat64( asynUser *pasynUser, epicsFloat64 value);
@@ -267,8 +267,18 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     return;
 }
 
+// tucsen::~tucsen(){
+//     static const char *functionName = "~tucsen";
+//     this->lock();
+//     printf("%s::%s Shutdown and freeing up memory...\n", driverName, functionName);
+//     shutdown();
+//     this->unlock();
+//     epicsThreadSleep(0.2);
+// }
+
 void tucsen::shutdown(void)
 {
+    std::cout<<"Shutting down driver"<<std::endl;
     exiting_=1;
     if (camHandle_.hIdxTUCam != NULL){
         disconnectCamera();
@@ -500,6 +510,9 @@ asynStatus tucsen::grabImage()
         unlock();
         printf("wait for buffer\n");
         int a;
+        getIntegerParam(ADAcquire, &a);
+        std::cout<<"ADAcqure is currently "<<a<<std::endl;
+        std::cout<<"Setting ADAcquire to 1"<<std::endl;
         setIntegerParam(ADAcquire, 1);
         callParamCallbacks();
 
@@ -534,10 +547,12 @@ asynStatus tucsen::grabImage()
 
     // Pixel bit depth
     bitDepth = frameHandle_.ucDepth;
+    //std::cout<<"bitDepth: "<<bitDepth<<std::endl;
     // Image format
     pixelFormat = frameHandle_.ucFormat;
     // Number of channels
     channels = frameHandle_.ucChannels;
+    //std::cout<<"Number of channels"<<channels<<std::endl;
     // Not sure what this is "Frame image data byte"?
     pixelBytes = frameHandle_.ucElemBytes;
     // Frame image serial number?
@@ -620,9 +635,14 @@ asynStatus tucsen::grabImage()
     memcpy(pRaw_->pData, frameHandle_.pBuffer+offset, dataSize);
     getIntegerParam(NDArrayCounter, &count);
     pRaw_->uniqueId = count+1;
-    updateTimeStamp(&pRaw_->epicsTS);
-    pRaw_->timeStamp = pRaw_->epicsTS.secPastEpoch+pRaw_->epicsTS.nsec/1e9;
-
+    // Changed the timestamping to match that of a DLS panda
+    //updateTimeStamp(&pRaw_->epicsTS);
+    //pRaw_->timeStamp = pRaw_->epicsTS.secPastEpoch+pRaw_->epicsTS.nsec/1e9;
+    // Set the time stamp
+    epicsTimeStamp arrayTime;
+    epicsTimeGetCurrent(&arrayTime);
+    pRaw_->timeStamp = arrayTime.secPastEpoch;
+    pRaw_->timeStamp +=0.000000001*arrayTime.nsec;
     getAttributes(pRaw_->pAttributeList);
 
     setIntegerParam(ADStatus, ADStatusIdle);
@@ -1189,6 +1209,7 @@ asynStatus tucsen::setCapability(int property, int val)
             driverName, functionName, e.c_str());
         return asynError;
     }
+
     return asynSuccess;
 }
 
@@ -1214,6 +1235,7 @@ asynStatus tucsen::startCapture()
     static const char* functionName = "startCapture";
     int a;
     getIntegerParam(ADAcquire, &a);
+    std::cout<<"ADACQUIRE om startCapture"<<a<<std::endl;
 
     setIntegerParam(ADNumImagesCounter, 0);
     setShutter(1);
@@ -1225,6 +1247,7 @@ asynStatus tucsen::stopCapture()
 {
     static const char* functionName = "stopCapture";
     int tucStatus;
+    std::cout<<"Stopping Capture"<<std::endl;
     TUCAM_Buf_AbortWait(camHandle_.hIdxTUCam);
     setShutter(0);
     setIntegerParam(ADStatus, ADStatusWaiting);
