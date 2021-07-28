@@ -97,6 +97,7 @@ class tucsen : public ADDriver
         asynStatus setCapability(int property, int value);
         asynStatus getCapability(int property, int& value);
         unsigned int checkStatus(unsigned int returnStatus);
+        unsigned int mAcquiringData;
 
         /* Data */
         int cameraId_;
@@ -261,6 +262,8 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     /* Launch shutdown task */
     epicsAtExit(c_shutdown, this);
 
+    mAcquiringData = 0;
+
     return;
 }
 
@@ -383,9 +386,9 @@ void tucsen::imageGrabTask(void)
 
         /* If we are not acquiring wait for a semaphore that is given when
          * acquisition is started */
-        if(!acquire){
+        if(!mAcquiringData){
             setIntegerParam(ADStatus, ADStatusIdle);
-            callParamCallbacks();
+            //callParamCallbacks();
 
             asynPrint(pasynUserSelf, ASYN_TRACE_FLOW,
                     "%s:%s: waiting for acquisition to start\n",
@@ -405,7 +408,7 @@ void tucsen::imageGrabTask(void)
             lock();
 			printf("G lock\n");
 			setIntegerParam(ADStatus, ADStatusWaiting);
-            callParamCallbacks();
+			//callParamCallbacks();
 			printf("Cap start\n");
             //tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, TUCCM_SEQUENCE);
             status = setTrigger();
@@ -420,7 +423,7 @@ void tucsen::imageGrabTask(void)
 			printf("Cap start done\n");
 			setIntegerParam(ADStatus, ADStatusAcquire);
 			printf("Call callback\n");
-            callParamCallbacks();
+			//callParamCallbacks();
 			printf("callback done\n");
             if (tucStatus!=TUCAMRET_SUCCESS){
                 asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
@@ -431,7 +434,6 @@ void tucsen::imageGrabTask(void)
                     "%s:%s: acquisition started\n",
                     driverName, functionName);
             setIntegerParam(ADNumImagesCounter, 0);
-            setIntegerParam(ADAcquire, 1);
         } else {
 			setIntegerParam(ADStatus, ADStatusAcquire);
 			callParamCallbacks();
@@ -493,10 +495,14 @@ asynStatus tucsen::grabImage()
     int nDims;
     int count;
 
-    printf("do unlock\n");
-    unlock();
-    printf("wait for buffer\n");
-    try{
+    try {
+        printf("do unlock\n");
+        unlock();
+        printf("wait for buffer\n");
+        int a;
+        setIntegerParam(ADAcquire, 1);
+        callParamCallbacks();
+
         tucStatus = checkStatus(TUCAM_Buf_WaitForFrame(camHandle_.hIdxTUCam, &frameHandle_));
     } catch (const std::string &e) {
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
@@ -636,129 +642,132 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
     int function = pasynUser->reason;
 
     getParamName(function, &paramName);
-    status = setIntegerParam(function, value);
     
     if (function==ADAcquire){
         if (value){
+            mAcquiringData = 1;
             status = startCapture();
         } else {
             status = stopCapture();
         }
-    } else if (function==ADNumImages){
-        //triggerHandle_.nFrames = value; // Trigger one frame(-1:to Ram)
-    } else if (function==ADNumExposures){
-        //status = setTrigger();
-    } else if (function==ADTriggerMode){
-        if (value==0){
-            // internal
-            triggerHandle_.nTgrMode = TUCCM_SEQUENCE; // Sequence mode
-            triggerHandle_.nExpMode = TUCTE_EXPTM;
-            std::cout<<"Setting internal Trigger (Sequence mode?)"<<std::endl;
-        } else if (value==1){
-             //external
-            triggerHandle_.nTgrMode = TUCCM_TRIGGER_STANDARD; // Exposure mode
-            triggerHandle_.nExpMode = TUCTE_WIDTH;
-            std::cout<<"Setting External trigger (Standard?)"<<std::endl;
-        }
-    } else if (function==TucsenFrameFormat){
-        try{
-            frameHandle_.ucFormatGet = frameFormats[value];
-            frameHandle_.uiRsdSize = 1;
-            frameHandle_.pBuffer = NULL;
-            tucStatus = checkStatus(TUCAM_Buf_Release(camHandle_.hIdxTUCam));
-            tucStatus = checkStatus(TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_));
-        } catch (const std::string &e) {
-            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-                "%s:%s: %s\n",
-                driverName, functionName, e.c_str());
-            return status;
-        }
-    } else if (function==TucsenBinMode){
-        try {
-            if ((value==0)||(value==1)){
-                status = setCapability(TUIDC_RESOLUTION, value);
-            }
-            frameHandle_.pBuffer = NULL;
-            tucStatus = TUCAM_Buf_Release(camHandle_.hIdxTUCam);
-            tucStatus = TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_);
-        } catch (const std::string &e) {
-            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-                "%s:%s: %s\n",
-                driverName, functionName, e.c_str());
-            return status;
-        }
-    } else if (function==TucsenFanGear){
-        if ((value>=0)||(value<=6)){
-            status = setCapability(TUIDC_FAN_GEAR, value);
-        }
-    } else if (function==TucsenImageMode){
-        if (value < 3){
-            status = setCapability(TUIDC_IMGMODESELECT, 0);
-            std::cout<<"Setting IMGMode to 400BSIV1"<<std::endl;
-        }
-        else if (value == 3){
-            status = setCapability(TUIDC_IMGMODESELECT, 1);
-            std::cout<<"Setting IMGMode to V1 and V2)"<<std::endl;
-        }
-        else{
-            status = setCapability(TUIDC_IMGMODESELECT, 2);
-            std::cout<<"Setting IMGMode to 400BSIV2"<<std::endl;
-        }
-        if ((value == 0)||(value==3)||(value==4)){
-            status = setCapability(TUIDP_GLOBALGAIN, 0);
-            std::cout<<"Setting GainMode to CMS or HDR"<<std::endl;
-        }
-        else if ((value == 1)||(value==5)){
-            status = setCapability(TUIDP_GLOBALGAIN, 1);
-            std::cout<<"Setting IMGMode to HighGain"<<std::endl;
-        }
-        else{
-            status = setCapability(TUIDP_GLOBALGAIN, 2);
-            std::cout<<"Setting IMGMode to LowGain"<<std::endl;
-        }
-
-
-    } else if (function==TucsenROIMode){
-        try{
-            TUCAM_ROI_ATTR roiAttr;
+    } else{
+        status = setIntegerParam(function, value);
+        if (function==ADNumImages){
+            //triggerHandle_.nFrames = value; // Trigger one frame(-1:to Ram)
+        } else if (function==ADNumExposures){
+            //status = setTrigger();
+        } else if (function==ADTriggerMode){
             if (value==0){
-                std::cout<<"Setting Height to 2040"<<std::endl;
-                roiAttr.nHeight=2040;
+                // internal
+                triggerHandle_.nTgrMode = TUCCM_SEQUENCE; // Sequence mode
+                triggerHandle_.nExpMode = TUCTE_EXPTM;
+                std::cout<<"Setting internal Trigger (Sequence mode?)"<<std::endl;
+            } else if (value==1){
+                 //external
+                triggerHandle_.nTgrMode = TUCCM_TRIGGER_STANDARD; // Exposure mode
+                triggerHandle_.nExpMode = TUCTE_EXPTM;
+                std::cout<<"Setting External trigger (Standard?)"<<std::endl;
             }
-            else if (value==1){
-                std::cout<<"Setting Height to 1024"<<std::endl;
-                roiAttr.nHeight=1024;
+        } else if (function==TucsenFrameFormat){
+            try{
+                frameHandle_.ucFormatGet = frameFormats[value];
+                frameHandle_.uiRsdSize = 1;
+                frameHandle_.pBuffer = NULL;
+                tucStatus = checkStatus(TUCAM_Buf_Release(camHandle_.hIdxTUCam));
+                tucStatus = checkStatus(TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_));
+            } catch (const std::string &e) {
+                asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                    "%s:%s: %s\n",
+                    driverName, functionName, e.c_str());
+                return status;
             }
-            else if (value==2){
-                std::cout<<"Setting Height to 512"<<std::endl;
-                roiAttr.nHeight=512;
+        } else if (function==TucsenBinMode){
+            try {
+                if ((value==0)||(value==1)){
+                    status = setCapability(TUIDC_RESOLUTION, value);
+                }
+                frameHandle_.pBuffer = NULL;
+                tucStatus = TUCAM_Buf_Release(camHandle_.hIdxTUCam);
+                tucStatus = TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_);
+            } catch (const std::string &e) {
+                asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                    "%s:%s: %s\n",
+                    driverName, functionName, e.c_str());
+                return status;
             }
-            else if (value==3){
-                std::cout<<"Setting Height to 256"<<std::endl;
-                roiAttr.nHeight=256;
+        } else if (function==TucsenFanGear){
+            if ((value>=0)||(value<=6)){
+                status = setCapability(TUIDC_FAN_GEAR, value);
             }
-            else if (value==4){
-                std::cout<<"Setting Height to 128"<<std::endl;
-                roiAttr.nHeight=128;
+        } else if (function==TucsenImageMode){
+            if (value < 3){
+                status = setCapability(TUIDC_IMGMODESELECT, 0);
+                std::cout<<"Setting IMGMode to 400BSIV1"<<std::endl;
             }
-            else if (value==5){
-                std::cout<<"Setting Height to 64"<<std::endl;
-                roiAttr.nHeight=64;
+            else if (value == 3){
+                status = setCapability(TUIDC_IMGMODESELECT, 1);
+                std::cout<<"Setting IMGMode to V1 and V2)"<<std::endl;
             }
-            roiAttr.nWidth=2048;
-            roiAttr.bEnable = TRUE;
-            checkStatus(TUCAM_Cap_SetROI(camHandle_.hIdxTUCam, roiAttr));
-        }  catch (const std::string &e) {
-            asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-                "%s:%s: %s\n",
-                driverName, functionName, e.c_str());
-            return status;
-        }
+            else{
+                status = setCapability(TUIDC_IMGMODESELECT, 2);
+                std::cout<<"Setting IMGMode to 400BSIV2"<<std::endl;
+            }
+            if ((value == 0)||(value==3)||(value==4)){
+                status = setCapability(TUIDP_GLOBALGAIN, 0);
+                std::cout<<"Setting GainMode to CMS or HDR"<<std::endl;
+            }
+            else if ((value == 1)||(value==5)){
+                status = setCapability(TUIDP_GLOBALGAIN, 1);
+                std::cout<<"Setting IMGMode to HighGain"<<std::endl;
+            }
+            else{
+                status = setCapability(TUIDP_GLOBALGAIN, 2);
+                std::cout<<"Setting IMGMode to LowGain"<<std::endl;
+            }
 
 
-    } else {
-        if (function < FIRST_TUCSEN_PARAM){
-            status = ADDriver::writeInt32(pasynUser, value);
+        } else if (function==TucsenROIMode){
+            try{
+                TUCAM_ROI_ATTR roiAttr;
+                if (value==0){
+                    std::cout<<"Setting Height to 2040"<<std::endl;
+                    roiAttr.nHeight=2040;
+                }
+                else if (value==1){
+                    std::cout<<"Setting Height to 1024"<<std::endl;
+                    roiAttr.nHeight=1024;
+                }
+                else if (value==2){
+                    std::cout<<"Setting Height to 512"<<std::endl;
+                    roiAttr.nHeight=512;
+                }
+                else if (value==3){
+                    std::cout<<"Setting Height to 256"<<std::endl;
+                    roiAttr.nHeight=256;
+                }
+                else if (value==4){
+                    std::cout<<"Setting Height to 128"<<std::endl;
+                    roiAttr.nHeight=128;
+                }
+                else if (value==5){
+                    std::cout<<"Setting Height to 64"<<std::endl;
+                    roiAttr.nHeight=64;
+                }
+                roiAttr.nWidth=2048;
+                roiAttr.bEnable = TRUE;
+                checkStatus(TUCAM_Cap_SetROI(camHandle_.hIdxTUCam, roiAttr));
+            }  catch (const std::string &e) {
+                asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                    "%s:%s: %s\n",
+                    driverName, functionName, e.c_str());
+                return status;
+            }
+
+
+        } else {
+            if (function < FIRST_TUCSEN_PARAM){
+                status = ADDriver::writeInt32(pasynUser, value);
+            }
         }
     }
     asynPrint(pasynUserSelf, ASYN_TRACEIO_DRIVER,
@@ -1203,6 +1212,8 @@ asynStatus tucsen::getCapability(int property, int& val)
 asynStatus tucsen::startCapture()
 {
     static const char* functionName = "startCapture";
+    int a;
+    getIntegerParam(ADAcquire, &a);
 
     setIntegerParam(ADNumImagesCounter, 0);
     setShutter(1);
@@ -1222,6 +1233,7 @@ asynStatus tucsen::stopCapture()
     setIntegerParam(ADAcquire, 0);
     setIntegerParam(ADStatus, ADStatusIdle);
     callParamCallbacks();
+    mAcquiringData = 0;
     return asynSuccess;
 }
 
