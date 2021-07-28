@@ -1225,7 +1225,7 @@ asynStatus tucsen::stopCapture()
 {
     static const char* functionName = "stopCapture";
     int tucStatus;
-
+    TUCAM_Buf_AbortWait(camHandle_.hIdxTUCam);
     setShutter(0);
     setIntegerParam(ADStatus, ADStatusWaiting);
     callParamCallbacks();
