@@ -166,6 +166,28 @@ record(mbbi, "$(P)$(R)GainMode_RBV")
     field(SXVL, "6")
 }
 
+record(mbbo, "$(P)$(R)HWTriggerMode")
+{
+    field(PINI, "YES")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_TRIG_MODE")
+    field(ZRST, "Gated")
+    field(ZRVL, "0")
+    field(ONST, "Timed")
+    field(ONVL, "1")
+}
+
+record(mbbi, "$(P)$(R)HWTriggerMode_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_TRIG_MODE")
+    field(SCAN, "I/O Intr")
+    field(ZRST, "Gated")
+    field(ZRVL, "0")
+    field(ONST, "Timed")
+    field(ONVL, "1")
+}
+
 record(mbbo, "$(P)$(R)ROIMode")
 {
     field(PINI, "YES")

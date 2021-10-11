@@ -38,6 +38,7 @@
 #define TucsenImageModeString     "T_IMG_MODE"
 #define TucsenROIModeString       "T_ROI_MODE"
 #define TucsenFanGearString       "T_FAN_GEAR"
+#define TucsenTrigModeString      "T_TRIG_MODE"
 #define TucsenOutTriggerPortString "T_OTRIG_PORT"
 #define TucsenOutTriggerModeString "T_OTRIG_MODE"
 #define TucsenOutTriggerEdgeString "T_OTRIG_EDG"
@@ -82,6 +83,7 @@ class tucsen : public ADDriver
         int TucsenImageMode;
         int TucsenROIMode;
         int TucsenFrameFormat;
+        int TucsenTrigMode;
         int TucsenOutTriggerPort;
         int TucsenOutTriggerMode;
         int TucsenOutTriggerEdge;
@@ -232,6 +234,7 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     createParam(TucsenImageModeString,     asynParamInt32,   &TucsenImageMode);
     createParam(TucsenROIModeString,       asynParamInt32,   &TucsenROIMode);
     createParam(TucsenFrameFormatString,   asynParamInt32,   &TucsenFrameFormat);
+    createParam(TucsenTrigModeString,       asynParamInt32,   &TucsenTrigMode);
     createParam(TucsenOutTriggerPortString, asynParamInt32, &TucsenOutTriggerPort);
     createParam(TucsenOutTriggerModeString, asynParamInt32, &TucsenOutTriggerMode);
     createParam(TucsenOutTriggerEdgeString, asynParamInt32, &TucsenOutTriggerEdge);
@@ -719,12 +722,10 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
             if (value==0){
                 // internal
                 triggerHandle_.nTgrMode = TUCCM_SEQUENCE; // Sequence mode
-                triggerHandle_.nExpMode = TUCTE_EXPTM;
                 std::cout<<"Setting internal Trigger (Sequence mode?)"<<std::endl;
             } else if (value==1){
                  //external
                 triggerHandle_.nTgrMode = TUCCM_TRIGGER_STANDARD; // Exposure mode
-                triggerHandle_.nExpMode = TUCTE_EXPTM;
                 std::cout<<"Setting External trigger (Standard?)"<<std::endl;
             }
         } else if (function==TucsenFrameFormat){
@@ -979,10 +980,27 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
 asynStatus tucsen::setTrigger()
 {
     static const char* functionName = "setTrigger";
+    int extTrigger;
+    int hwTriggerMode;
     try{
         triggerHandle_.nEdgeMode= TUCTD_RISING; // Stimulate rising edge
         triggerHandle_.nDelayTm = 0; // Delay 0 ms
         triggerHandle_.nFrames = 1;
+        getCapability(ADTriggerMode,extTrigger);
+        if (extTrigger==1){
+            // Internal Trigger
+            triggerHandle_.nExpMode = TUCTE_EXPTM;
+        }
+        else {
+            getCapability(TucsenTrigMode, hwTriggerMode);
+            if (hwTriggerMode == 0){
+                // Gated
+                triggerHandle_.nExpMode = TUCTE_EXPTM;
+            } else if (hwTriggerMode == 1){
+                // Timed
+                triggerHandle_.nExpMode = TUCTE_WIDTH;
+            }
+        }
         TUCAM_Cap_SetTrigger(camHandle_.hIdxTUCam, triggerHandle_);
     } catch (const std::string &e) {
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
