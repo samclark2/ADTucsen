@@ -892,3 +892,45 @@ value {
 }
 endObjectProperties
 
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 1
+x 12
+y 812
+w 92
+h 20
+font "arial-bold-r-12.0"
+fgColor index 14
+bgColor index 3
+useDisplayBg
+value {
+  "OutputTrigger"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 112
+y 812
+w 130
+h 20
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-bold-r-16.0"
+buttonLabel "Output Trigger"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "TucsenOutTrigger.edl"
+}
+endObjectProperties
+

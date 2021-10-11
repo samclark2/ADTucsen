@@ -38,6 +38,11 @@
 #define TucsenImageModeString     "T_IMG_MODE"
 #define TucsenROIModeString       "T_ROI_MODE"
 #define TucsenFanGearString       "T_FAN_GEAR"
+#define TucsenOutTriggerPortString "T_OTRIG_PORT"
+#define TucsenOutTriggerModeString "T_OTRIG_MODE"
+#define TucsenOutTriggerEdgeString "T_OTRIG_EDG"
+#define TucsenOutTriggerDelayString "T_OTRIG_DLY"
+#define TucsenOutTriggerWidthString "T_OTRIG_WID"
 
 static const int frameFormats[3] = {
     0x10,
@@ -77,7 +82,12 @@ class tucsen : public ADDriver
         int TucsenImageMode;
         int TucsenROIMode;
         int TucsenFrameFormat;
-#define LAST_TUCSEN_PARAM TucsenFrameFormat
+        int TucsenOutTriggerPort;
+        int TucsenOutTriggerMode;
+        int TucsenOutTriggerEdge;
+        int TucsenOutTriggerDelay;
+        int TucsenOutTriggerWidth;
+#define LAST_TUCSEN_PARAM TucsenOutTriggerWidth
 
     private:
         /* Local methods to this class */
@@ -106,6 +116,9 @@ class tucsen : public ADDriver
         TUCAM_OPEN camHandle_;
         TUCAM_FRAME frameHandle_;
         TUCAM_TRIGGER_ATTR triggerHandle_;
+        TUCAM_TRGOUT_ATTR outTriggerHandle1_;
+        TUCAM_TRGOUT_ATTR outTriggerHandle2_;
+        TUCAM_TRGOUT_ATTR outTriggerHandle3_;
         epicsEventId startEventId_;
         NDArray *pRaw_;
 };
@@ -219,6 +232,11 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     createParam(TucsenImageModeString,     asynParamInt32,   &TucsenImageMode);
     createParam(TucsenROIModeString,       asynParamInt32,   &TucsenROIMode);
     createParam(TucsenFrameFormatString,   asynParamInt32,   &TucsenFrameFormat);
+    createParam(TucsenOutTriggerPortString, asynParamInt32, &TucsenOutTriggerPort);
+    createParam(TucsenOutTriggerModeString, asynParamInt32, &TucsenOutTriggerMode);
+    createParam(TucsenOutTriggerEdgeString, asynParamInt32, &TucsenOutTriggerEdge);
+    createParam(TucsenOutTriggerDelayString, asynParamInt32, &TucsenOutTriggerDelay);
+    createParam(TucsenOutTriggerWidthString, asynParamInt32, &TucsenOutTriggerWidth);
 
     /* Set initial values for some parameters */
     setIntegerParam(NDDataType, NDUInt16);
@@ -237,6 +255,11 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     setStringParam(ADManufacturer, "Tucsen");
 
     status = connectCamera();
+    setIntegerParam(TucsenOutTriggerPort, 0);
+    setIntegerParam(TucsenOutTriggerMode, 0);
+    setIntegerParam(TucsenOutTriggerEdge, 0);
+    setIntegerParam(TucsenOutTriggerDelay, 1);
+    setIntegerParam(TucsenOutTriggerWidth, 1);
     if (status) {
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
                 "%s:%s: camera connection failed (%d)\n",
@@ -300,6 +323,22 @@ asynStatus tucsen::connectCamera()
     getcwd(szPath, 1024);
     apiHandle_.pstrConfigPath = szPath;
     apiHandle_.uiCamCount = 0;
+
+    outTriggerHandle1_.nTgrOutPort=0;
+    outTriggerHandle1_.nEdgeMode=0;
+    outTriggerHandle1_.nDelayTm=1;
+    outTriggerHandle1_.nWidth=1;
+    outTriggerHandle1_.nTgrOutMode=0;
+    outTriggerHandle2_.nTgrOutPort=1;
+    outTriggerHandle2_.nEdgeMode=0;
+    outTriggerHandle2_.nDelayTm=1;
+    outTriggerHandle2_.nWidth=1;
+    outTriggerHandle2_.nTgrOutMode=0;
+    outTriggerHandle3_.nTgrOutPort=2;
+    outTriggerHandle3_.nEdgeMode=0;
+    outTriggerHandle3_.nDelayTm=1;
+    outTriggerHandle3_.nWidth=1;
+    outTriggerHandle3_.nTgrOutMode=0;
 
     tucStatus = TUCAM_Api_Init(&apiHandle_);
     if (tucStatus!=TUCAMRET_SUCCESS){
@@ -783,7 +822,147 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
                 return status;
             }
 
-
+        } else if (function==TucsenOutTriggerPort){
+            if (value==0){
+                setIntegerParam(TucsenOutTriggerMode, outTriggerHandle1_.nTgrOutMode);
+                setIntegerParam(TucsenOutTriggerEdge, outTriggerHandle1_.nEdgeMode);
+                setIntegerParam(TucsenOutTriggerDelay, outTriggerHandle1_.nDelayTm);
+                setIntegerParam(TucsenOutTriggerWidth, outTriggerHandle1_.nWidth);
+            } else if (value==1){
+                setIntegerParam(TucsenOutTriggerMode, outTriggerHandle2_.nTgrOutMode);
+                setIntegerParam(TucsenOutTriggerEdge, outTriggerHandle2_.nEdgeMode);
+                setIntegerParam(TucsenOutTriggerDelay, outTriggerHandle2_.nDelayTm);
+                setIntegerParam(TucsenOutTriggerWidth, outTriggerHandle2_.nWidth);
+            } else if (value==2){
+                setIntegerParam(TucsenOutTriggerMode, outTriggerHandle3_.nTgrOutMode);
+                setIntegerParam(TucsenOutTriggerEdge, outTriggerHandle3_.nEdgeMode);
+                setIntegerParam(TucsenOutTriggerDelay, outTriggerHandle3_.nDelayTm);
+                setIntegerParam(TucsenOutTriggerWidth, outTriggerHandle3_.nWidth);
+            }
+        } else if (function==TucsenOutTriggerMode){
+            int port;
+            getIntegerParam(TucsenOutTriggerPort, &port);
+            if (port==0){
+                outTriggerHandle1_.nTgrOutMode=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle1_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==1){
+                outTriggerHandle2_.nTgrOutMode=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle2_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==2){
+                outTriggerHandle3_.nTgrOutMode=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle3_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            }
+        } else if (function==TucsenOutTriggerEdge){
+            int port;
+            getIntegerParam(TucsenOutTriggerPort, &port);
+            if (port==0){
+                outTriggerHandle1_.nEdgeMode=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle1_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==1){
+                outTriggerHandle2_.nEdgeMode=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle2_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==2){
+                outTriggerHandle3_.nEdgeMode=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle3_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            }
+        } else if (function==TucsenOutTriggerDelay){
+            int port;
+            getIntegerParam(TucsenOutTriggerPort, &port);
+            if (port==0){
+                outTriggerHandle1_.nDelayTm=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle1_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==1){
+                outTriggerHandle2_.nDelayTm=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle2_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==2){
+                outTriggerHandle3_.nDelayTm=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle3_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            }
+        } else if (function==TucsenOutTriggerWidth){
+            int port;
+            getIntegerParam(TucsenOutTriggerPort, &port);
+            if (port==0){
+                outTriggerHandle1_.nWidth=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle1_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==1){
+                outTriggerHandle2_.nWidth=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle2_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            } else if (port==2){
+                outTriggerHandle3_.nWidth=value;
+                try {
+                    tucStatus=checkStatus(TUCAM_Cap_SetTriggerOut(camHandle_.hIdxTUCam, outTriggerHandle3_));
+                } catch (const std::string &e) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s:%s: %s\n",
+                              driverName, functionName, e.c_str());
+                }
+            }
         } else {
             if (function < FIRST_TUCSEN_PARAM){
                 status = ADDriver::writeInt32(pasynUser, value);

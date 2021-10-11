@@ -655,3 +655,120 @@ record(ai, "$(P)$(R)RightLevels_RBV")
    field(PREC, "3")
    field(SCAN, "I/O Intr")
 }
+
+record(mbbo, "$(P)$(R)OutTriggerPort")
+{
+   field(PINI, "YES")
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_PORT")
+   field(ZRST, "Port 1")
+   field(ZRVL, "0")
+   field(ONST, "Port2")
+   field(ONVL, "1")
+   field(TWST, "Port3")
+   field(TWVL, "2")
+}
+
+record(mbbi, "$(P)$(R)OutTriggerPort_RBV")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_PORT")
+   field(SCAN, "I/O Intr")
+   field(ZRST, "Port 1")
+   field(ZRVL, "0")
+   field(ONST, "Port2")
+   field(ONVL, "1")
+   field(TWST, "Port3")
+   field(TWVL, "2")
+}
+
+
+record(mbbo, "$(P)$(R)OutTriggerMode")
+{
+   field(PINI, "YES")
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_MODE")
+   field(ZRST, "High")
+   field(ZRVL, "0")
+   field(ONST, "Low")
+   field(ONVL, "1")
+   field(TWST, "Trigger Input")
+   field(TWVL, "2")
+   field(THST, "Exposure Start")
+   field(THVL, "3")
+   field(FRST, "Global Exposure")
+   field(FRVL, "4")
+   field(FVST, "Readout End")
+   field(FVVL, "5")
+}
+
+record(mbbi, "$(P)$(R)OutTriggerMode_RBV")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_MODE")
+   field(SCAN, "I/O Intr")
+   field(ZRST, "High")
+   field(ZRVL, "0")
+   field(ONST, "Low")
+   field(ONVL, "1")
+   field(TWST, "Trigger Input")
+   field(TWVL, "2")
+   field(THST, "Exposure Start")
+   field(THVL, "3")
+   field(FRST, "Global Exposure")
+   field(FRVL, "4")
+   field(FVST, "Readout End")
+   field(FVVL, "5")
+}
+
+record(mbbo, "$(P)$(R)OutTriggerEdge")
+{
+   field(PINI, "YES")
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_EDG")
+   field(ZRST, "Rising")
+   field(ZRVL, "0")
+   field(ONST, "Falling")
+   field(ONVL, "1")
+}
+
+record(mbbi, "$(P)$(R)OutTriggerEdge_RBV")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_EDG")
+   field(SCAN, "I/O Intr")
+   field(ZRST, "Rising")
+   field(ZRVL, "0")
+   field(ONST, "Falling")
+   field(ONVL, "1")
+}
+
+record(ao, "$(P)$(R)OutTriggerDelay")
+{
+   field(PINI, "YES")
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_DLY")
+}
+
+record(ai, "$(P)$(R)OutTriggerDelay_RBV")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_DLY")
+   field(PREC, "3")
+   field(SCAN, "I/O Intr")
+}
+
+record(ao, "$(P)$(R)OutTriggerWidth")
+{
+   field(PINI, "YES")
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_WID")
+}
+
+record(ai, "$(P)$(R)OutTriggerWidth_RBV")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_OTRIG_WID")
+   field(PREC, "3")
+   field(SCAN, "I/O Intr")
+}
