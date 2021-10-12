@@ -251,10 +251,10 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     setStringParam(ADStringFromServer, "<not used by driver>");
     setStringParam(ADManufacturer, "Tucsen");
     setIntegerParam(ADMaxSizeX, 2048);
-    setIntegerParam(ADMaxSizeY, 2040);
+    setIntegerParam(ADMaxSizeY, 2048);
     setIntegerParam(NDArraySizeX, 2048);
-    setIntegerParam(NDArraySizeY, 2040);
-    setIntegerParam(NDArraySize, 2*2048*2040);
+    setIntegerParam(NDArraySizeY, 2048);
+    setIntegerParam(NDArraySize, 2*2048*2048);
     setStringParam(ADManufacturer, "Tucsen");
 
     status = connectCamera();
@@ -790,8 +790,8 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
             try{
                 TUCAM_ROI_ATTR roiAttr;
                 if (value==0){
-                    std::cout<<"Setting Height to 2040"<<std::endl;
-                    roiAttr.nHeight=2040;
+                    std::cout<<"Setting Height to 2048"<<std::endl;
+                    roiAttr.nHeight=2048;
                 }
                 else if (value==1){
                     std::cout<<"Setting Height to 1024"<<std::endl;
