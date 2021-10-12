@@ -794,3 +794,27 @@ record(ai, "$(P)$(R)OutTriggerWidth_RBV")
    field(PREC, "3")
    field(SCAN, "I/O Intr")
 }
+
+# The Following PVs are inherited from ADCore, but overwritten to add archiving
+
+#% archiver 10 Monitor
+record(ai, "$(P)$(R)TemperatureActual")
+{
+}
+
+#% archiver 10 Monitor
+
+record(ai, "$(P)$(R)AcquireTime_RBV")
+{
+}
+
+#% archiver 10 Monitor
+
+record(bo, "$(P)$(R)Acquire")
+{
+}
+
+#% archiver 10 Monitor
+record(calc, "$(P)$(R)ArrayRate_RBV")
+{
+}
