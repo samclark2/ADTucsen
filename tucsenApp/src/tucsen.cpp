@@ -456,12 +456,12 @@ void tucsen::imageGrabTask(void)
                 return;
             }
             epicsEventWait(startEventId_);
-			printf("W lock\n");
+			// printf("W lock\n");
             lock();
-			printf("G lock\n");
+			// printf("G lock\n");
 			setIntegerParam(ADStatus, ADStatusWaiting);
 			//callParamCallbacks();
-			printf("Cap start\n");
+			// printf("Cap start\n");
             //tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, TUCCM_SEQUENCE);
             status = setTrigger();
             try{
@@ -472,11 +472,11 @@ void tucsen::imageGrabTask(void)
                     driverName, functionName, e.c_str());
                 return;
             }
-			printf("Cap start done\n");
+			// printf("Cap start done\n");
 			setIntegerParam(ADStatus, ADStatusAcquire);
-			printf("Call callback\n");
+			// printf("Call callback\n");
 			//callParamCallbacks();
-			printf("callback done\n");
+			// printf("callback done\n");
             if (tucStatus!=TUCAMRET_SUCCESS){
                 asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
                         "%s:%s: Failed to start image capture (%d)\n",
@@ -493,10 +493,10 @@ void tucsen::imageGrabTask(void)
 
 
         /* Get the current time */
-		printf("get time\n");
+		// printf("get time\n");
         epicsTimeGetCurrent(&startTime);
 
-		printf("grab image\n");
+		// printf("grab image\n");
         status = grabImage();
         if (status==asynError){
             // Release the allocated NDArray
@@ -548,13 +548,13 @@ asynStatus tucsen::grabImage()
     int count;
 
     try {
-        printf("do unlock\n");
+        // printf("do unlock\n");
         unlock();
-        printf("wait for buffer\n");
+        // printf("wait for buffer\n");
         int a;
-        getIntegerParam(ADAcquire, &a);
-        std::cout<<"ADAcqure is currently "<<a<<std::endl;
-        std::cout<<"Setting ADAcquire to 1"<<std::endl;
+        // getIntegerParam(ADAcquire, &a);
+        // std::cout<<"ADAcqure is currently "<<a<<std::endl;
+        // std::cout<<"Setting ADAcquire to 1"<<std::endl;
         setIntegerParam(ADAcquire, 1);
         callParamCallbacks();
 
@@ -566,9 +566,9 @@ asynStatus tucsen::grabImage()
         status = asynError;
     }
 
-    printf("Waiting for lock\n");
+    // printf("Waiting for lock\n");
     lock();
-    printf("Got lock\n");
+    // printf("Got lock\n");
     if (tucStatus!= TUCAMRET_SUCCESS){
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
                 "%s:%s: Failed to wait for buffer (%d)\n",
@@ -986,13 +986,13 @@ asynStatus tucsen::setTrigger()
         triggerHandle_.nEdgeMode= TUCTD_RISING; // Stimulate rising edge
         triggerHandle_.nDelayTm = 0; // Delay 0 ms
         triggerHandle_.nFrames = 1;
-        getCapability(ADTriggerMode,extTrigger);
+        getIntegerParam(ADTriggerMode,&extTrigger);
         if (extTrigger==1){
             // Internal Trigger
             triggerHandle_.nExpMode = TUCTE_EXPTM;
         }
         else {
-            getCapability(TucsenTrigMode, hwTriggerMode);
+            getIntegerParam(TucsenTrigMode, &hwTriggerMode);
             if (hwTriggerMode == 0){
                 // Gated
                 triggerHandle_.nExpMode = TUCTE_EXPTM;
@@ -1431,8 +1431,8 @@ asynStatus tucsen::startCapture()
 {
     static const char* functionName = "startCapture";
     int a;
-    getIntegerParam(ADAcquire, &a);
-    std::cout<<"ADACQUIRE om startCapture"<<a<<std::endl;
+    // getIntegerParam(ADAcquire, &a);
+    // std::cout<<"ADACQUIRE om startCapture"<<a<<std::endl;
 
     setIntegerParam(ADNumImagesCounter, 0);
     setShutter(1);
