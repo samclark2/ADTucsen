@@ -773,15 +773,15 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
                 std::cout<<"Setting IMGMode to 400BSIV2"<<std::endl;
             }
             if ((value == 0)||(value==3)||(value==4)){
-                status = setCapability(TUIDP_GLOBALGAIN, 0);
+                status = setProperty(TUIDP_GLOBALGAIN, 0);
                 std::cout<<"Setting GainMode to CMS or HDR"<<std::endl;
             }
             else if ((value == 1)||(value==5)){
-                status = setCapability(TUIDP_GLOBALGAIN, 1);
+                status = setProperty(TUIDP_GLOBALGAIN, 1);
                 std::cout<<"Setting IMGMode to HighGain"<<std::endl;
             }
             else{
-                status = setCapability(TUIDP_GLOBALGAIN, 2);
+                status = setProperty(TUIDP_GLOBALGAIN, 2);
                 std::cout<<"Setting IMGMode to LowGain"<<std::endl;
             }
 
