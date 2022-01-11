@@ -987,7 +987,7 @@ asynStatus tucsen::setTrigger()
         triggerHandle_.nDelayTm = 0; // Delay 0 ms
         triggerHandle_.nFrames = 1;
         getIntegerParam(ADTriggerMode,&extTrigger);
-        if (extTrigger==1){
+        if (extTrigger==0){
             // Internal Trigger
             triggerHandle_.nExpMode = TUCTE_EXPTM;
         }
@@ -995,10 +995,10 @@ asynStatus tucsen::setTrigger()
             getIntegerParam(TucsenTrigMode, &hwTriggerMode);
             if (hwTriggerMode == 0){
                 // Gated
-                triggerHandle_.nExpMode = TUCTE_EXPTM;
+                triggerHandle_.nExpMode = TUCTE_WIDTH;
             } else if (hwTriggerMode == 1){
                 // Timed
-                triggerHandle_.nExpMode = TUCTE_WIDTH;
+                triggerHandle_.nExpMode = TUCTE_EXPTM;
             }
         }
         TUCAM_Cap_SetTrigger(camHandle_.hIdxTUCam, triggerHandle_);
