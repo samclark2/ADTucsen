@@ -4,7 +4,7 @@ major 4
 minor 0
 release 1
 x 1151
-y 203
+y 240
 w 395
 h 845
 font "helvetica-medium-r-18.0"
@@ -45,7 +45,7 @@ major 4
 minor 1
 release 1
 x 8
-y 516
+y 515
 w 110
 h 20
 font "arial-bold-r-12.0"
@@ -141,9 +141,9 @@ beginObjectProperties
 major 10
 minor 0
 release 0
-x 108
-y 516
-w 75
+x 100
+y 515
+w 130
 h 20
 controlPv "$(P)$(R)Temperature"
 displayMode "decimal"
@@ -161,9 +161,9 @@ beginObjectProperties
 major 4
 minor 6
 release 0
-x 192
-y 516
-w 72
+x 260
+y 515
+w 80
 h 20
 controlPv "$(P)$(R)Temperature_RBV"
 font "arial-bold-r-12.0"
@@ -185,8 +185,8 @@ beginObjectProperties
 major 4
 minor 6
 release 0
-x 280
-y 516
+x 345
+y 515
 w 35
 h 20
 controlPv "$(P)$(R)TemperatureActual"
@@ -209,9 +209,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 120
+x 100
 y 540
-w 75
+w 130
 h 20
 fgColor index 25
 bgColor index 3
@@ -228,9 +228,9 @@ beginObjectProperties
 major 4
 minor 6
 release 0
-x 200
+x 260
 y 540
-w 72
+w 120
 h 20
 controlPv "$(P)$(R)FanGear_RBV"
 font "arial-bold-r-12.0"
@@ -272,9 +272,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 104
-y 576
-w 136
+x 100
+y 575
+w 130
 h 20
 fgColor index 25
 bgColor index 3
@@ -292,8 +292,8 @@ major 4
 minor 1
 release 1
 x 8
-y 568
-w 90
+y 575
+w 92
 h 20
 font "arial-bold-r-12.0"
 fgColor index 14
@@ -311,7 +311,7 @@ major 4
 minor 6
 release 0
 x 260
-y 576
+y 575
 w 120
 h 20
 controlPv "$(P)$(R)GainMode_RBV"
@@ -335,8 +335,8 @@ major 4
 minor 1
 release 1
 x 8
-y 620
-w 90
+y 625
+w 92
 h 20
 font "arial-bold-r-12.0"
 fgColor index 14
@@ -353,9 +353,9 @@ beginObjectProperties
 major 4
 minor 6
 release 0
-x 96
-y 624
-w 84
+x 260
+y 625
+w 120
 h 20
 controlPv "$(P)$(R)TransferRate_RBV"
 font "arial-bold-r-12.0"
@@ -402,7 +402,7 @@ major 4
 minor 1
 release 1
 x 8
-y 596
+y 600
 w 92
 h 20
 font "arial-bold-r-12.0"
@@ -420,9 +420,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 104
+x 100
 y 600
-w 136
+w 130
 h 20
 fgColor index 25
 bgColor index 3
@@ -440,7 +440,7 @@ major 4
 minor 6
 release 0
 x 260
-y 664
+y 675
 w 120
 h 20
 controlPv "$(P)$(R)ROIMode_RBV"
@@ -463,9 +463,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 104
-y 664
-w 136
+x 100
+y 675
+w 130
 h 20
 fgColor index 25
 bgColor index 3
@@ -483,7 +483,7 @@ major 4
 minor 1
 release 1
 x 8
-y 660
+y 675
 w 92
 h 20
 font "arial-bold-r-12.0"
@@ -502,7 +502,7 @@ major 4
 minor 6
 release 0
 x 260
-y 644
+y 650
 w 120
 h 20
 controlPv "$(P)$(R)FrameFormat_RBV"
@@ -525,9 +525,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 104
-y 644
-w 136
+x 100
+y 650
+w 130
 h 20
 fgColor index 25
 bgColor index 3
@@ -545,7 +545,7 @@ major 4
 minor 1
 release 1
 x 8
-y 640
+y 650
 w 92
 h 20
 font "arial-bold-r-12.0"
@@ -563,8 +563,8 @@ beginObjectProperties
 major 4
 minor 1
 release 1
-x 3
-y 717
+x 8
+y 725
 w 92
 h 20
 font "arial-bold-r-12.0"
@@ -582,11 +582,11 @@ beginObjectProperties
 major 4
 minor 4
 release 0
-x 104
-y 715
-w 136
+x 100
+y 725
+w 130
 h 20
-fgColor index 25
+fgColor index 43
 bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
@@ -606,7 +606,7 @@ major 4
 minor 1
 release 1
 x 8
-y 680
+y 700
 w 92
 h 20
 font "arial-bold-r-12.0"
@@ -624,9 +624,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 104
-y 687
-w 136
+x 100
+y 700
+w 130
 h 20
 fgColor index 25
 bgColor index 3
@@ -643,8 +643,8 @@ beginObjectProperties
 major 4
 minor 6
 release 0
-x 258
-y 690
+x 260
+y 700
 w 120
 h 20
 controlPv "$(P)$(R)HWTriggerMode_RBV"
