@@ -44,6 +44,7 @@
 #define TucsenOutTriggerEdgeString "T_OTRIG_EDG"
 #define TucsenOutTriggerDelayString "T_OTRIG_DLY"
 #define TucsenOutTriggerWidthString "T_OTRIG_WID"
+#define TucsenMissFrameErrorCounterString "T_MISS_FRAME"
 
 static const int frameFormats[3] = {
     0x10,
@@ -62,7 +63,7 @@ class tucsen : public ADDriver
     public:
         tucsen( const char* portName, int cameraId, int traceMask, int maxBuffers,
                 size_t maxMemory, int priority, int stackSize);
-        // virtual ~tucsen();
+        virtual ~tucsen();
         /* Virtual methods to override from ADDrive */
         virtual asynStatus writeInt32( asynUser *pasynUser, epicsInt32 value);
         virtual asynStatus writeFloat64( asynUser *pasynUser, epicsFloat64 value);
@@ -89,7 +90,8 @@ class tucsen : public ADDriver
         int TucsenOutTriggerEdge;
         int TucsenOutTriggerDelay;
         int TucsenOutTriggerWidth;
-#define LAST_TUCSEN_PARAM TucsenOutTriggerWidth
+        int TucsenMissFrameErrorCounter;
+#define LAST_TUCSEN_PARAM TucsenMissFrameErrorCounter
 
     private:
         /* Local methods to this class */
@@ -240,6 +242,7 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     createParam(TucsenOutTriggerEdgeString, asynParamInt32, &TucsenOutTriggerEdge);
     createParam(TucsenOutTriggerDelayString, asynParamInt32, &TucsenOutTriggerDelay);
     createParam(TucsenOutTriggerWidthString, asynParamInt32, &TucsenOutTriggerWidth);
+    createParam(TucsenMissFrameErrorCounterString, asynParamInt32, &TucsenMissFrameErrorCounter);
 
     /* Set initial values for some parameters */
     setIntegerParam(NDDataType, NDUInt16);
@@ -256,6 +259,9 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     setIntegerParam(NDArraySizeY, 2048);
     setIntegerParam(NDArraySize, 2*2048*2048);
     setStringParam(ADManufacturer, "Tucsen");
+
+    setIntegerParam(TucsenMissFrameErrorCounter, 0);
+
 
     status = connectCamera();
     setIntegerParam(TucsenOutTriggerPort, 0);
@@ -293,14 +299,14 @@ tucsen::tucsen(const char *portName, int cameraId, int traceMask, int maxBuffers
     return;
 }
 
-// tucsen::~tucsen(){
-//     static const char *functionName = "~tucsen";
-//     this->lock();
-//     printf("%s::%s Shutdown and freeing up memory...\n", driverName, functionName);
-//     shutdown();
-//     this->unlock();
-//     epicsThreadSleep(0.2);
-// }
+tucsen::~tucsen(){
+    static const char *functionName = "~tucsen";
+    this->lock();
+    printf("%s::%s Shutdown and freeing up memory...\n", driverName, functionName);
+    shutdown();
+    this->unlock();
+    epicsThreadSleep(0.2);
+}
 
 void tucsen::shutdown(void)
 {
@@ -465,6 +471,7 @@ void tucsen::imageGrabTask(void)
             //tucStatus = TUCAM_Cap_Start(camHandle_.hIdxTUCam, TUCCM_SEQUENCE);
             status = setTrigger();
             try{
+                tucStatus = checkStatus(TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_));
                 tucStatus = checkStatus(TUCAM_Cap_Start(camHandle_.hIdxTUCam, triggerHandle_.nTgrMode));
             } catch (const std::string &e) {
                 asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
@@ -502,6 +509,15 @@ void tucsen::imageGrabTask(void)
             // Release the allocated NDArray
             if (pRaw_) pRaw_->release();
             pRaw_ = NULL;
+            getIntegerParam(ADAcquire, &acquire);
+            if (acquire == 0) {
+                if (imageMode != ADImageContinuous) {
+                    setIntegerParam(ADStatus, ADStatusAborted);
+                    setStringParam(ADStatusMessage, "Aborted by user");
+                } else {
+                    status = asynSuccess;
+                }
+            }
             continue;
         }
 
@@ -547,32 +563,65 @@ asynStatus tucsen::grabImage()
     int nDims;
     int count;
 
-    try {
-        // printf("do unlock\n");
-        unlock();
-        // printf("wait for buffer\n");
-        int a;
-        // getIntegerParam(ADAcquire, &a);
-        // std::cout<<"ADAcqure is currently "<<a<<std::endl;
-        // std::cout<<"Setting ADAcquire to 1"<<std::endl;
-        setIntegerParam(ADAcquire, 1);
-        callParamCallbacks();
+    // printf("do unlock\n");
+    unlock();
+    // printf("wait for buffer\n");
+    int a;
+    // getIntegerParam(ADAcquire, &a);
+    // std::cout<<"ADAcqure is currently "<<a<<std::endl;
+    // std::cout<<"Setting ADAcquire to 1"<<std::endl;
+    setIntegerParam(ADAcquire, 1);
+    callParamCallbacks();
 
-        tucStatus = checkStatus(TUCAM_Buf_WaitForFrame(camHandle_.hIdxTUCam, &frameHandle_));
-    } catch (const std::string &e) {
-        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-            "%s:%s: %s\n",
-        driverName, functionName, e.c_str());
-        status = asynError;
-    }
+    // tucStatus = checkStatus(TUCAM_Buf_WaitForFrame(camHandle_.hIdxTUCam, &frameHandle_));
+    tucStatus = TUCAM_Buf_WaitForFrame(camHandle_.hIdxTUCam, &frameHandle_);
+
 
     // printf("Waiting for lock\n");
     lock();
     // printf("Got lock\n");
+    // if (tucStatus == TUCAMRET_MISSFRAME){
+    //     asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+    //             "%s:%s: Failed to wait for buffer, counting as frame (%#010x)\n",
+    //             driverName, functionName, tucStatus);
+    //     dims[0] = 2048;
+    //     dims[1] = 2048;
+    //     pRaw_ = pNDArrayPool->alloc(2, dims, NDUInt16, 0, NULL);
+    //     epicsTimeStamp arrayTime;
+    //     epicsTimeGetCurrent(&arrayTime);
+    //     pRaw_->timeStamp = arrayTime.secPastEpoch;
+    //     pRaw_->timeStamp +=0.000000001*arrayTime.nsec;
+    //     getAttributes(pRaw_->pAttributeList);
+
+    //     setIntegerParam(ADStatus, ADStatusIdle);
+    //     callParamCallbacks();
+    //     return asynSuccess;
     if (tucStatus!= TUCAMRET_SUCCESS){
+        int imageCounter;
+        getIntegerParam(NDArrayCounter, &imageCounter);
+
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-                "%s:%s: Failed to wait for buffer (%d)\n",
-                driverName, functionName, tucStatus);
+                "%s:%s: Failed to wait for buffer on frame(%d) (%#010x)\n",
+                driverName, functionName, imageCounter, tucStatus);
+
+        int errorCounter;
+        if (tucStatus == TUCAMRET_MISSFRAME){
+            getIntegerParam(TucsenMissFrameErrorCounter, &errorCounter);
+            setIntegerParam(TucsenMissFrameErrorCounter, errorCounter + 1);
+            dims[0] = 2048;
+            dims[1] = 2048;
+            pRaw_ = pNDArrayPool->alloc(2, dims, NDUInt16, 0, NULL);
+            epicsTimeStamp arrayTime;
+            epicsTimeGetCurrent(&arrayTime);
+            pRaw_->timeStamp = arrayTime.secPastEpoch;
+            pRaw_->timeStamp +=0.000000001*arrayTime.nsec;
+            getAttributes(pRaw_->pAttributeList);
+
+            setIntegerParam(ADStatus, ADStatusIdle);
+            callParamCallbacks();
+            return asynSuccess;
+        }
+        return asynError;
     }
 
     setIntegerParam(ADStatus, ADStatusReadout);
@@ -733,8 +782,8 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
                 frameHandle_.ucFormatGet = frameFormats[value];
                 frameHandle_.uiRsdSize = 1;
                 frameHandle_.pBuffer = NULL;
-                tucStatus = checkStatus(TUCAM_Buf_Release(camHandle_.hIdxTUCam));
-                tucStatus = checkStatus(TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_));
+                // tucStatus = checkStatus(TUCAM_Buf_Release(camHandle_.hIdxTUCam));
+                // tucStatus = checkStatus(TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_));
             } catch (const std::string &e) {
                 asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
                     "%s:%s: %s\n",
@@ -747,8 +796,8 @@ asynStatus tucsen::writeInt32( asynUser *pasynUser, epicsInt32 value)
                     status = setCapability(TUIDC_RESOLUTION, value);
                 }
                 frameHandle_.pBuffer = NULL;
-                tucStatus = TUCAM_Buf_Release(camHandle_.hIdxTUCam);
-                tucStatus = TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_);
+                // tucStatus = TUCAM_Buf_Release(camHandle_.hIdxTUCam);
+                // tucStatus = TUCAM_Buf_Alloc(camHandle_.hIdxTUCam, &frameHandle_);
             } catch (const std::string &e) {
                 asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
                     "%s:%s: %s\n",
@@ -1449,7 +1498,9 @@ asynStatus tucsen::stopCapture()
     setShutter(0);
     setIntegerParam(ADStatus, ADStatusWaiting);
     callParamCallbacks();
-    //tucStatus = TUCAM_Cap_Stop(camHandle_.hIdxTUCam);
+    tucStatus = checkStatus(TUCAM_Cap_Stop(camHandle_.hIdxTUCam));
+    tucStatus = checkStatus(TUCAM_Buf_Release(camHandle_.hIdxTUCam));
+
     setIntegerParam(ADAcquire, 0);
     setIntegerParam(ADStatus, ADStatusIdle);
     callParamCallbacks();

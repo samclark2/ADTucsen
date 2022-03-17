@@ -818,3 +818,10 @@ record(bo, "$(P)$(R)Acquire")
 record(calc, "$(P)$(R)ArrayRate_RBV")
 {
 }
+
+record(ai, "$(P)$(R)TucamMissingFrames_RBV")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))T_MISS_FRAME")
+   field(SCAN, "I/O Intr")
+}
