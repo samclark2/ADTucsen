@@ -1,5 +1,3 @@
-# CONFIG
--include $(CONFIG)/RULES.Dls
 # RULES
 
 include $(CONFIG)/RULES
